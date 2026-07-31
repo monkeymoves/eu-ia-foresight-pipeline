@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Foresight in EU Impact Assessments: harvesting and screening pipeline"
+type: software
+authors:
+  - family-names: Maggs
+    given-names: Luke
+date-released: "2026-07-31"
+repository-code: "https://github.com/monkeymoves/eu-ia-foresight-pipeline"
+license: MIT
+abstract: >-
+  Deterministic pipeline that harvests EU Commission impact assessments from
+  the Register of Commission Documents, extracts page-marked text, locates
+  foresight-related terminology with page-level provenance, and produces a
+  reviewable dataset for human classification of foresight use.

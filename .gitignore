@@ -1,0 +1,14 @@
+# All harvested and generated artefacts stay out of the repo
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS / editors
+.DS_Store
+
+# Working files that are not part of the tooling
+*.xlsx
+~$*
