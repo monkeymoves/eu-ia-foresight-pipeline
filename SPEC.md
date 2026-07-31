@@ -177,9 +177,17 @@ Sheet "IAs", one row per IA, ordered by date descending:
 | Flags | comma-joined manifest flags |
 
 Sheet "Mentions", one row per mention: Reference, Part, Page, Page label,
-Excerpt, In reference section, AI draft verdict (blank), AI draft
-justification (blank), Human verdict (blank; validation list), Human notes
-(blank). Freeze header rows, sensible column widths, wrap text on excerpt.
+Open PDF at page (hyperlink, see below), Excerpt, In reference section,
+AI draft verdict, AI draft justification, Human verdict (validation list),
+Human notes. Freeze header rows, sensible column widths, wrap text on
+excerpt. On the IAs sheet, Reference links to the register detail page and
+PDF folder links to the relative folder.
+
+Because spreadsheet applications strip URL fragments from file hyperlinks
+(a direct link to part1.pdf#page=14 opens at page 1), each mention's
+hyperlink targets a tiny generated redirect page in data/links/ that
+forwards the browser to ../pdfs/<ref-safe>/part<N>.pdf#page=<page> with the
+fragment intact. outputs_xlsx.py generates one stub per mention.
 
 ### data/out/review.html (review_html.py)
 

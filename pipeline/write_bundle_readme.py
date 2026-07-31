@@ -57,6 +57,7 @@ data/
   pdfs/<ref>/partN.pdf
   md/<ref>/partN.md   page-marked plain text of each PDF
   docx/<ref>/partN.docx   Word versions of the markdown, for easier reading
+  links/              tiny redirect pages used by spreadsheet hyperlinks
   out/
     dataset.xlsx      the spreadsheet - see below
     review.html       open this first; double-click to open in a browser
@@ -94,6 +95,11 @@ Two sheets:
 - **Scope** is filled in automatically from the title (a best-effort
   regex heuristic - please sanity-check it, it has not been reviewed by
   the team yet).
+- **"Open PDF at page"** on the Mentions sheet is a clickable link that
+  opens the source PDF at the exact page of that mention (via a tiny
+  redirect page in `links/` - this is why that folder must travel with
+  the bundle). Your spreadsheet app may show a security prompt the first
+  time; allow it.
 - Dropdown lists are embedded on the verdict/kind/influence columns
   (kind: {kind_values}; influence: {influence_values}) so you can pick
   from a fixed list rather than typing free text.

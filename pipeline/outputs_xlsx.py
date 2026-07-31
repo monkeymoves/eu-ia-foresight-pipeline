@@ -71,6 +71,38 @@ def load_json(path: Path) -> dict:
         return json.load(f)
 
 
+def link_stub_name(mention_id: str) -> str:
+    """Mention id -> safe redirect filename, e.g. SWD(2026)616#p2-14-1 -> SWD_2026_616_p2-14-1.html"""
+    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in mention_id)
+    while "__" in safe:
+        safe = safe.replace("__", "_")
+    return safe.strip("_") + ".html"
+
+
+def write_link_stubs(manifest: dict, mentions: dict, links_dir: Path) -> int:
+    """One tiny redirect page per mention: Excel opens it (no fragment needed),
+    the browser forwards to the PDF with #page= intact. Keeps jump-to-page
+    working from spreadsheet hyperlinks, which strip URL fragments on files."""
+    links_dir.mkdir(parents=True, exist_ok=True)
+    written = 0
+    for reference, ia in mentions.get("ias", {}).items():
+        ref_safe = manifest["ias"][reference].get("ref_safe", config.ref_safe(reference))
+        for mention in ia.get("mentions", []):
+            target = f"../pdfs/{ref_safe}/part{mention['part']}.pdf#page={mention['page']}"
+            stub = links_dir / link_stub_name(mention["id"])
+            stub.write_text(
+                "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+                f"<meta http-equiv=\"refresh\" content=\"0;url={target}\">"
+                f"<script>location.replace(\"{target}\");</script>"
+                f"<title>{reference} p.{mention['page']}</title></head>"
+                f"<body><a href=\"{target}\">{reference}, part {mention['part']}, "
+                f"page {mention['page']}</a></body></html>",
+                encoding="utf-8",
+            )
+            written += 1
+    return written
+
+
 def _draft_justification(verdict: dict) -> str:
     quote = (verdict.get("evidence_quote") or "").strip()
     why = (verdict.get("justification") or "").strip()
@@ -112,6 +144,7 @@ MENTION_HEADER = [
     "Part",
     "Page",
     "Page label",
+    "Open PDF at page",
     "Excerpt",
     "In reference section",
     "AI draft verdict",
@@ -207,6 +240,15 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
             ", ".join(flags),
         ]
         ws_ia.append(row)
+        ref_cell = ws_ia.cell(row=ws_ia.max_row, column=1)
+        if ia.get("detail_url"):
+            ref_cell.hyperlink = ia["detail_url"]
+            ref_cell.font = Font(color="0B5FA5", underline="single")
+        pdf_cell = ws_ia.cell(
+            row=ws_ia.max_row, column=ia_header.index("PDF folder") + 1
+        )
+        pdf_cell.hyperlink = f"../pdfs/{ref_safe}/"
+        pdf_cell.font = Font(color="0B5FA5", underline="single")
 
         for mention in mention_list:
             ws_mentions.append(
@@ -215,6 +257,7 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
                     mention.get("part"),
                     mention.get("page"),
                     mention.get("page_label", ""),
+                    f"p.{mention.get('page')}",
                     mention.get("excerpt", ""),
                     "yes" if mention.get("in_reference_section") else "no",
                     draft_verdicts.get(mention.get("id"), {}).get("verdict", ""),
@@ -223,6 +266,12 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
                     "",  # Human notes
                 ]
             )
+            link_cell = ws_mentions.cell(
+                row=ws_mentions.max_row,
+                column=MENTION_HEADER.index("Open PDF at page") + 1,
+            )
+            link_cell.hyperlink = f"../links/{link_stub_name(mention['id'])}"
+            link_cell.font = Font(color="0B5FA5", underline="single")
 
     # --- IAs sheet formatting ---
     from openpyxl.utils import get_column_letter as _cl
@@ -268,8 +317,12 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
 
     # --- Mentions sheet formatting ---
     m_last_row = ws_mentions.max_row
-    _add_list_validation(ws_mentions, "I", config.KIND_VALUES, m_last_row)  # Human verdict
-    _add_list_validation(ws_mentions, "G", config.KIND_VALUES, m_last_row)  # AI draft verdict
+
+    def mcol(header_name: str) -> str:
+        return _cl(MENTION_HEADER.index(header_name) + 1)
+
+    _add_list_validation(ws_mentions, mcol("Human verdict"), config.KIND_VALUES, m_last_row)
+    _add_list_validation(ws_mentions, mcol("AI draft verdict"), config.KIND_VALUES, m_last_row)
 
     _set_col_widths(
         ws_mentions,
@@ -278,17 +331,19 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
             "B": 8,
             "C": 8,
             "D": 12,
-            "E": 90,
-            "F": 16,
+            "E": 14,
+            "F": 90,
             "G": 16,
-            "H": 40,
-            "I": 16,
-            "J": 40,
+            "H": 16,
+            "I": 40,
+            "J": 16,
+            "K": 40,
         },
     )
     excerpt_alignment = Alignment(wrap_text=True, vertical="top")
+    excerpt_col = MENTION_HEADER.index("Excerpt") + 1
     for row_cells in ws_mentions.iter_rows(
-        min_row=2, max_row=m_last_row, min_col=5, max_col=5
+        min_row=2, max_row=m_last_row, min_col=excerpt_col, max_col=excerpt_col
     ):
         for cell in row_cells:
             cell.alignment = excerpt_alignment
@@ -320,6 +375,8 @@ def main() -> int:
         print(f"including AI drafts from {args.drafts}")
 
     wb = build_workbook(manifest, mentions, drafts)
+    n_stubs = write_link_stubs(manifest, mentions, config.DATA_DIR / "links")
+    print(f"wrote {n_stubs} redirect stubs to data/links/")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     wb.save(args.out)
