@@ -281,10 +281,23 @@ def harvest_ia(manifest: dict, document: dict, redownload: bool) -> tuple[int, i
             continue
 
         print(f"  part {part_number}: downloading {pdf_relative}")
-        download_part(reference, part["ers_id"], pdf_path)
+        try:
+            download_part(reference, part["ers_id"], pdf_path)
+        except RuntimeError as error:
+            # Register-side failure for this file (e.g. persistent 503).
+            # Flag it and carry on; the next run retries because no sha256
+            # was recorded.
+            print(f"  part {part_number}: download failed, flagged ({error})")
+            add_flag(entry, f"download_failed_part{part_number}")
+            pdf_path.unlink(missing_ok=True)
+            continue
         part["sha256"] = sha256_of(pdf_path)
         part["downloaded_at"] = now_iso()
         part.setdefault("pages", None)
+        entry["flags"] = [
+            flag for flag in entry.get("flags", [])
+            if flag != f"download_failed_part{part_number}"
+        ]
         downloaded += 1
 
     if missing_english:
