@@ -151,43 +151,41 @@ trimmed to sentence boundaries where cheap, newlines collapsed.
 
 ### data/out/dataset.xlsx (openpyxl)
 
-Sheet "IAs", one row per IA, ordered by date descending:
+Single sheet "IAs", one row per impact assessment, ordered by date
+descending. The team records one judgement per document here; per-mention
+evidence lives on the review page. Columns:
 
 | column | source |
 |---|---|
-| Reference | manifest |
-| Title | manifest |
-| Date | manifest |
-| Responsible service | manifest (department code) |
-| Topic | blank (filled later; controlled vocabulary) |
-| Scope | derived from title, enum: new regulation, amending regulation, new directive, amending directive, council directive, decision, multiple acts, other. Regex over the title's act phrases; multiple distinct acts -> multiple acts |
+| Reference | manifest; hyperlink to the register detail page |
+| Title, Date, Responsible service | manifest |
+| Topic | blank, human-owned (controlled vocabulary) |
+| AI draft: topic | drafts file |
+| Scope | derived from title, enum: new regulation, amending regulation, new directive, amending directive, council directive, decision, multiple acts, other |
 | Foresight mention | YES / no |
 | Mention count | count |
-| Kind of foresight (final) | blank, human-owned; validation list embedded, contextual |
-| AI draft: kind | blank (filled by AI step) |
-| AI draft: methods | blank |
-| AI draft: material influence | blank; validation yes, no, unclear |
-| AI draft: how | blank |
-| Other / notes | blank |
+| Mention pages | text summary, e.g. "part 1: p.27, p.136; part 3: p.15" |
+| Review page | hyperlink to PUBLIC_BASE_URL/out/review.html#ia-<ref-safe> |
+| Kind of foresight (final) | blank, human-owned; dropdown embedded, contextual |
+| AI draft: kind / methods / material influence / how / notes | drafts file |
+| Other / notes | blank, human-owned |
 | Related: <term> | one count column per related term |
-| Parts | number of parts |
-| PDF folder | relative path pdfs/<ref-safe>/ |
-| Markdown folder | relative path md/<ref-safe>/ |
-| Docx folder | relative path docx/<ref-safe>/ |
-| Flags | comma-joined manifest flags |
+| Parts, Flags | manifest |
 
-Sheet "Mentions", one row per mention: Reference, Part, Page, Page label,
-Open PDF at page (hyperlink, see below), Excerpt, In reference section,
-AI draft verdict, AI draft justification, Human verdict (validation list),
-Human notes. Freeze header rows, sensible column widths, wrap text on
-excerpt. On the IAs sheet, Reference links to the register detail page and
-PDF folder links to the relative folder.
+All hyperlinks are absolute URLs (register pages and the hosted review
+page), so they survive conversion to Google Sheets and avoid spreadsheet
+apps' local-file link handling entirely. (Earlier revisions used a second
+Mentions sheet and data/links/ redirect stubs for local-file page jumps;
+both retired once the bundle became publicly hosted.)
 
-Because spreadsheet applications strip URL fragments from file hyperlinks
-(a direct link to part1.pdf#page=14 opens at page 1), each mention's
-hyperlink targets a tiny generated redirect page in data/links/ that
-forwards the browser to ../pdfs/<ref-safe>/part<N>.pdf#page=<page> with the
-fragment intact. outputs_xlsx.py generates one stub per mention.
+## Public hosting
+
+The data bundle (the contents of data/) is published as a static site
+from the companion repository eu-ia-foresight-data via GitHub Pages at
+PUBLIC_BASE_URL (pipeline/config.py). review.html uses relative links, so
+the same file works hosted and offline. The harvested documents are
+public Commission documents; their reuse is governed by the Commission's
+legal notice (CC BY 4.0), noted in that repository's README.
 
 ### data/out/review.html (review_html.py)
 

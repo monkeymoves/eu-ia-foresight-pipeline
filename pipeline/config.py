@@ -56,3 +56,7 @@ def ref_safe(reference: str) -> str:
     return (
         reference.replace("(", "_").replace(")", "_").replace("/", "_").strip("_").replace("__", "_")
     )
+
+# Public hosting of the data bundle (GitHub Pages). Spreadsheet links use
+# this base so they work from Google Sheets, Excel, and anywhere else.
+PUBLIC_BASE_URL = "https://monkeymoves.github.io/eu-ia-foresight-data"

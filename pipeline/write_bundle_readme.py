@@ -33,98 +33,77 @@ def counts(manifest: dict, mentions: dict) -> tuple[int, int]:
 
 def build_readme(manifest: dict, mentions: dict) -> str:
     n_ias, n_mentions = counts(manifest, mentions)
+    base_url = config.PUBLIC_BASE_URL
     kind_values = ", ".join(config.KIND_VALUES)
     influence_values = ", ".join(config.INFLUENCE_VALUES)
     return f"""# Foresight in EU Impact Assessments - data bundle
 
-This folder is a self-contained snapshot: {n_ias} impact assessments,
-{n_mentions} located "foresight" mentions. It was produced by
-`pipeline/run_all.py` - see the repository's SPEC.md for the full method.
+{n_ias} impact assessments, {n_mentions} located "foresight" mentions.
+Produced by `pipeline/run_all.py`; method and schemas in the repository's
+SPEC.md (https://github.com/monkeymoves/eu-ia-foresight-pipeline).
 
-## Before you start
+## The two working surfaces
 
-**Download the whole `data/` folder to your own machine before opening
-anything.** `review.html` and `dataset.xlsx` link to the PDFs, markdown and
-docx files using relative paths (`../pdfs/...`, `../md/...`, `../docx/...`).
-Those links only resolve if the folder structure below is kept intact and
-everything sits together locally - they will not work from a partial
-download or if `out/` is moved out of `data/`.
+1. **The review page** - browse the evidence.
+   Hosted at {base_url}/out/review.html (also in this bundle at
+   `out/review.html`, which works offline). Search and filters at the top,
+   an index of mention-bearing IAs on the left, every mention as a
+   highlighted excerpt with a link that opens the source PDF at the exact
+   page. Tick mentions as you review them; ticks are stored in your own
+   browser only (a personal aid, not shared data).
+
+2. **The spreadsheet** - record the judgements.
+   `out/dataset.xlsx`: a single sheet, one row per impact assessment.
+   Read the evidence for an IA on the review page (the "Review page" link
+   in its row takes you straight there), then record your call in that row.
+
+## Which columns are yours vs AI-drafted
+
+- Yours (the actual dataset): **Topic**, **Kind of foresight (final)**,
+  **Other / notes**. Dropdowns are embedded where a fixed list applies
+  (kind: embedded, contextual).
+- Machine suggestions, clearly named **"AI draft: ..."**: topic, kind,
+  methods, material influence, how, notes. Every draft verdict traces to a
+  verbatim quote visible on the review page. Confirm or override; never
+  treat a draft as a result (see docs/adr/0001 in the repository).
+- Deterministic (no AI, but heuristics worth sanity-checking): **Scope**
+  (parsed from the title), **Mention pages**, **Related: ...** term counts,
+  **Flags** (e.g. register-side download failures).
+
+The "Reference" column links to the official register entry; "Review page"
+links to that IA's section of the hosted review page. Both are ordinary
+web links, so they work from Excel, Google Sheets, or anywhere else.
+
+## Working in Google Sheets
+
+Upload `dataset.xlsx` to Google Drive and open it with Google Sheets (or
+File > Import in an empty Sheet). Links and dropdowns survive the
+conversion, and the whole team can then work in one shared Sheet.
+
+## Folder contents
 
 ```
-data/
-  manifest.json       one register entry per impact assessment (IA)
-  mentions.json       every located "foresight" mention, with page refs
-  pdfs/<ref>/partN.pdf
-  md/<ref>/partN.md   page-marked plain text of each PDF
-  docx/<ref>/partN.docx   Word versions of the markdown, for easier reading
-  links/              tiny redirect pages used by spreadsheet hyperlinks
-  out/
-    dataset.xlsx      the spreadsheet - see below
-    review.html       open this first; double-click to open in a browser
-    README.md         this file
+manifest.json       one register entry per impact assessment (IA)
+mentions.json       every located "foresight" mention, with page refs
+ai_drafts.json      the combined AI draft classifications (with evidence)
+pdfs/<ref>/partN.pdf
+md/<ref>/partN.md   page-marked plain text of each PDF
+docx/<ref>/partN.docx   Word versions, for easier reading
+out/
+  dataset.xlsx      the spreadsheet
+  review.html       the review page (self-contained, works offline)
+  README.md         this file
 ```
-
-## Start here: review.html
-
-Open `data/out/review.html` in any modern browser (double-click it, no
-server needed). Each impact assessment is listed newest-first with every
-"foresight" mention shown as an excerpt (the word is highlighted), a link
-to the register entry, and a link that jumps straight to the right page of
-the source PDF. IAs with no mentions are collapsed at the bottom. Use the
-"all / with mentions / without mentions" control at the top to filter.
-
-## The spreadsheet: dataset.xlsx
-
-Two sheets:
-
-- **IAs** - one row per impact assessment.
-- **Mentions** - one row per individual "foresight" mention, with its
-  excerpt and page reference, for detailed classification.
-
-### Which columns are yours vs. AI-drafted
-
-- Columns named **"AI draft: ..."** (and **"AI draft verdict"** /
-  **"AI draft justification"** on the Mentions sheet) are optional,
-  machine-generated suggestions. They are a head start, not a result -
-  see `docs/adr/0001-human-owned-classification.md` for why.
-- Columns without "AI draft" in the name - **Kind of foresight (final)**,
-  **Human verdict**, **Human notes**, **Topic**, **Other / notes** - are
-  yours. These are what actually gets used in the published research.
-  Confirm or override every AI draft; blank AI draft columns are simply
-  ones nobody has run yet, not a judgement of "contextual" by default.
-- **Scope** is filled in automatically from the title (a best-effort
-  regex heuristic - please sanity-check it, it has not been reviewed by
-  the team yet).
-- **"Open PDF at page"** on the Mentions sheet is a clickable link that
-  opens the source PDF at the exact page of that mention (via a tiny
-  redirect page in `links/` - this is why that folder must travel with
-  the bundle). Your spreadsheet app may show a security prompt the first
-  time; allow it.
-- Dropdown lists are embedded on the verdict/kind/influence columns
-  (kind: {kind_values}; influence: {influence_values}) so you can pick
-  from a fixed list rather than typing free text.
 
 ## Re-running the AI draft step yourself
 
-The AI draft columns are produced by pasting mention excerpts into a
-Claude session (claude.ai or Claude Code) under your own subscription -
-**no paid API calls are used anywhere in this pipeline**. The prompt is
-versioned at `prompts/classification-prompt.md` in the repository. To
-redo or extend the drafts:
-
-1. Open `prompts/classification-prompt.md` and copy its contents into a
-   new claude.ai chat (or `claude` in a terminal).
-2. Paste in the excerpt(s) from the Mentions sheet (and the IA's title/
-   department for context) in the format the prompt asks for.
-3. Copy Claude's output back into the matching "AI draft" columns.
-4. Review each one against the excerpt before treating it as final -
-   that review is the point of this workflow, not a formality.
-
-## Questions
-
-See CONTEXT.md and SPEC.md in the repository for the glossary and full
-data contracts, and docs/adr/0001 for why classification is human-owned.
+The AI drafts were produced in Claude sessions (claude.ai / Claude Code)
+using the versioned prompt at `prompts/classification-prompt.md` in the
+repository - no paid API calls anywhere. To redo or extend them, paste the
+prompt plus the relevant excerpts into your own Claude session and copy
+the output back into the "AI draft" columns, then review as usual.
 """
+
 
 
 def main() -> int:
