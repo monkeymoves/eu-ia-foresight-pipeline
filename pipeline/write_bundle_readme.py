@@ -90,7 +90,9 @@ pdfs/<ref>/partN.pdf
 md/<ref>/partN.md   page-marked plain text of each PDF
 docx/<ref>/partN.docx   Word versions, for easier reading
 out/
-  dataset.xlsx      the spreadsheet
+  dataset.xlsx      the spreadsheet (web links - for Google Sheets)
+  dataset-offline.xlsx  same sheet with local links, for offline use
+  links/            per-IA redirect stubs used by the offline spreadsheet
   review.html       the review page (self-contained, works offline)
   README.md         this file
 ```

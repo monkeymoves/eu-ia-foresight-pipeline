@@ -96,6 +96,21 @@ def build_search_blob(reference: str, title: str, department: str, topic: str) -
     return esc(" ".join(p for p in parts if p).lower())
 
 
+def part_links(ia: dict, ref_safe: str) -> str:
+    """Direct per-part file links. Folder links 404 on static hosting
+    (no directory listings), so link the actual files."""
+    bits = []
+    for part in sorted(ia.get("parts", []), key=lambda p: p.get("part", 0)):
+        n = part.get("part")
+        bits.append(
+            f'&middot; part {n}: '
+            f'<a href="../pdfs/{esc(ref_safe)}/part{n}.pdf">PDF</a> /'
+            f' <a href="../md/{esc(ref_safe)}/part{n}.md">text</a> /'
+            f' <a href="../docx/{esc(ref_safe)}/part{n}.docx">docx</a>'
+        )
+    return "\n          ".join(bits)
+
+
 def ia_section(reference: str, ia: dict, ia_mentions: dict, draft: dict, topic: str) -> str:
     draft_verdicts = draft.get("mention_verdicts", {})
     ref_safe = ia.get("ref_safe", config.ref_safe(reference))
@@ -144,10 +159,8 @@ def ia_section(reference: str, ia: dict, ia_mentions: dict, draft: dict, topic: 
         <p class="ia-meta">
           {esc(date)} &middot; {esc(department)}
           &middot; {n} mention{"s" if n != 1 else ""} &middot;
-          <a href="{esc(ia.get("detail_url", "#"))}">register detail</a> &middot;
-          <a href="../pdfs/{esc(ref_safe)}/">PDFs</a> &middot;
-          <a href="../md/{esc(ref_safe)}/">markdown</a> &middot;
-          <a href="../docx/{esc(ref_safe)}/">docx</a>
+          <a href="{esc(ia.get("detail_url", "#"))}">register detail</a>
+          {part_links(ia, ref_safe)}
           {flags_bit}
         </p>
         {ia_draft_block(draft, topic)}

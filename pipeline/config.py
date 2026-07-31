@@ -60,3 +60,7 @@ def ref_safe(reference: str) -> str:
 # Public hosting of the data bundle (GitHub Pages). Spreadsheet links use
 # this base so they work from Google Sheets, Excel, and anywhere else.
 PUBLIC_BASE_URL = "https://monkeymoves.github.io/eu-ia-foresight-data"
+
+# Browsable folder listings for the hosted spreadsheet (GitHub repo tree;
+# GitHub Pages itself has no directory listings).
+REPO_TREE_URL = "https://github.com/monkeymoves/eu-ia-foresight-data/tree/main"

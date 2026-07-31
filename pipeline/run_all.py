@@ -22,6 +22,7 @@ STEPS: list[tuple[str, list[str]]] = [
     ("detect.py", []),
     ("convert_docx.py", []),
     ("outputs_xlsx.py", []),
+    ("outputs_xlsx.py", ["--links", "local", "--out", "data/out/dataset-offline.xlsx"]),
     ("review_html.py", []),
     ("write_bundle_readme.py", []),
 ]

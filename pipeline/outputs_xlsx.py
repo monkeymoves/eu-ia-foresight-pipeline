@@ -102,10 +102,37 @@ HEADER_BASE = [
     "AI draft: notes",
     "Other / notes",
 ]
-HEADER_TAIL = ["Parts", "Flags"]
+HEADER_TAIL = ["Parts", "PDF folder", "Markdown folder", "Docx folder", "Flags"]
 
 
-def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -> Workbook:
+def write_ia_stubs(manifest: dict, links_dir: Path) -> int:
+    """Local-links mode only: one tiny redirect page per IA so that Excel's
+    fragment-stripping on file hyperlinks still lands on the right section
+    of the local review page."""
+    links_dir.mkdir(parents=True, exist_ok=True)
+    written = 0
+    for reference, ia in manifest.get("ias", {}).items():
+        ref_safe = ia.get("ref_safe", config.ref_safe(reference))
+        target = f"../review.html#ia-{ref_safe}"
+        (links_dir / f"{ref_safe}.html").write_text(
+            "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+            f"<meta http-equiv=\"refresh\" content=\"0;url={target}\">"
+            f"<script>location.replace(\"{target}\");</script>"
+            f"<title>{reference}</title></head>"
+            f"<body><a href=\"{target}\">{reference} on the review page</a>"
+            "</body></html>",
+            encoding="utf-8",
+        )
+        written += 1
+    return written
+
+
+def build_workbook(
+    manifest: dict,
+    mentions: dict,
+    drafts: dict | None = None,
+    link_mode: str = "web",
+) -> Workbook:
     drafts = drafts or {}
     draft_ias = drafts.get("ias", {})
     draft_topics = drafts.get("topics", {})
@@ -158,7 +185,13 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
             "",  # Other / notes - human
         ]
         row += [related_counts.get(t, 0) for t in related_terms]
-        row += [len(ia.get("parts", [])), ", ".join(ia.get("flags", []))]
+        row += [
+            len(ia.get("parts", [])),
+            f"pdfs/{ref_safe}/",
+            f"md/{ref_safe}/",
+            f"docx/{ref_safe}/",
+            ", ".join(ia.get("flags", [])),
+        ]
         ws.append(row)
 
         r = ws.max_row
@@ -168,10 +201,24 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
             ref_cell.font = LINK_FONT
         if mention_list:
             review_cell = ws.cell(row=r, column=col("Review page"))
-            review_cell.hyperlink = (
-                f"{config.PUBLIC_BASE_URL}/out/review.html#ia-{ref_safe}"
-            )
+            if link_mode == "web":
+                review_cell.hyperlink = (
+                    f"{config.PUBLIC_BASE_URL}/out/review.html#ia-{ref_safe}"
+                )
+            else:
+                review_cell.hyperlink = f"links/{ref_safe}.html"
             review_cell.font = LINK_FONT
+        for name, folder in (
+            ("PDF folder", "pdfs"),
+            ("Markdown folder", "md"),
+            ("Docx folder", "docx"),
+        ):
+            cell = ws.cell(row=r, column=col(name))
+            if link_mode == "web":
+                cell.hyperlink = f"{config.REPO_TREE_URL}/{folder}/{ref_safe}"
+            else:
+                cell.hyperlink = f"../{folder}/{ref_safe}/"
+            cell.font = LINK_FONT
 
     last_row = ws.max_row
 
@@ -217,6 +264,8 @@ def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -
     for term in related_terms:
         ws.column_dimensions[letter(f"Related: {term}")].width = 14
     ws.column_dimensions[letter("Parts")].width = 8
+    for name in ("PDF folder", "Markdown folder", "Docx folder"):
+        ws.column_dimensions[letter(name)].width = 20
     ws.column_dimensions[letter("Flags")].width = 20
 
     wrap = Alignment(wrap_text=True, vertical="top")
@@ -235,6 +284,13 @@ def main() -> int:
     parser.add_argument("--mentions", type=Path, default=config.MENTIONS_PATH)
     parser.add_argument("--out", type=Path, default=config.OUT_DIR / "dataset.xlsx")
     parser.add_argument("--drafts", type=Path, default=config.DATA_DIR / "ai_drafts.json")
+    parser.add_argument(
+        "--links",
+        choices=("web", "local"),
+        default="web",
+        help="web: absolute URLs for the hosted bundle / Google Sheets; "
+        "local: relative paths for the offline zip (also writes out/links/ stubs)",
+    )
     args = parser.parse_args()
 
     if not args.manifest.exists():
@@ -250,11 +306,18 @@ def main() -> int:
     if drafts:
         print(f"including AI drafts from {args.drafts}")
 
-    wb = build_workbook(manifest, mentions, drafts)
+    wb = build_workbook(manifest, mentions, drafts, link_mode=args.links)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     wb.save(args.out)
 
-    print(f"wrote {args.out} ({len(manifest.get('ias', {}))} IAs, single sheet)")
+    if args.links == "local":
+        n_stubs = write_ia_stubs(manifest, args.out.parent / "links")
+        print(f"wrote {n_stubs} review-page stubs to {args.out.parent / 'links'}")
+
+    print(
+        f"wrote {args.out} "
+        f"({len(manifest.get('ias', {}))} IAs, single sheet, {args.links} links)"
+    )
     return 0
 
 
