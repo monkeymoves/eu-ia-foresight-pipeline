@@ -472,6 +472,7 @@ mark { background: var(--mark-bg); color: var(--mark-fg); border-radius: 2px; pa
 .draft-line { margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--muted); }
 .ia-draft { margin: 0 0 0.6rem; font-size: 0.85rem; }
 .draft-caveat { color: var(--muted); font-style: italic; font-size: 0.78rem; }
+details.ia.deep-linked { outline: 2px solid var(--link); outline-offset: 2px; }
 details.zero-group { margin-top: 1.5rem; border: none; }
 details.zero-group > summary {
   cursor: pointer;
@@ -737,8 +738,29 @@ JS = """
     });
   }
 
+  /* ---------------- deep links (e.g. from the spreadsheet) ---------------- */
+  function focusHashTarget() {
+    var hash = location.hash || '';
+    if (hash.indexOf('#ia-') !== 0) return;
+    var target = document.getElementById(hash.slice(1));
+    if (!target) return;
+    /* Declutter: filter the page down to just this IA, open it, scroll. */
+    var ref = target.querySelector('.ia-ref');
+    if (searchInput && ref) {
+      searchInput.value = ref.textContent;
+      apply();
+    }
+    target.open = true;
+    target.classList.add('deep-linked');
+    setTimeout(function () {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+  window.addEventListener('hashchange', focusHashTarget);
+
   initProgress();
   apply();
+  focusHashTarget();
 })();
 """
 
