@@ -71,6 +71,14 @@ def load_json(path: Path) -> dict:
         return json.load(f)
 
 
+def _draft_justification(verdict: dict) -> str:
+    quote = (verdict.get("evidence_quote") or "").strip()
+    why = (verdict.get("justification") or "").strip()
+    if quote and why:
+        return f'"{quote}" : {why}'
+    return why or quote
+
+
 # --- Workbook building --------------------------------------------------------
 
 IA_HEADER_BASE = [
@@ -79,6 +87,7 @@ IA_HEADER_BASE = [
     "Date",
     "Responsible service",
     "Topic",
+    "AI draft: topic",
     "Scope",
     "Foresight mention",
     "Mention count",
@@ -87,6 +96,7 @@ IA_HEADER_BASE = [
     "AI draft: methods",
     "AI draft: material influence",
     "AI draft: how",
+    "AI draft: notes",
     "Other / notes",
 ]
 IA_HEADER_TAIL = [
@@ -129,7 +139,10 @@ def _add_list_validation(ws, col_letter: str, values: list[str], last_row: int) 
     dv.add(f"{col_letter}2:{col_letter}{last_row}")
 
 
-def build_workbook(manifest: dict, mentions: dict) -> Workbook:
+def build_workbook(manifest: dict, mentions: dict, drafts: dict | None = None) -> Workbook:
+    drafts = drafts or {}
+    draft_ias = drafts.get("ias", {})
+    draft_topics = drafts.get("topics", {})
     related_terms = mentions.get("related_terms") or list(config.RELATED_TERMS)
     ia_header = IA_HEADER_BASE + [f"Related: {t}" for t in related_terms] + IA_HEADER_TAIL
 
@@ -164,22 +177,26 @@ def build_workbook(manifest: dict, mentions: dict) -> Workbook:
         related_counts = m.get("related_term_counts", {})
         flags = ia.get("flags", [])
         parts = ia.get("parts", [])
+        draft = draft_ias.get(reference, {})
+        draft_verdicts = draft.get("mention_verdicts", {})
 
         row = [
             reference,
             ia.get("title", ""),
             ia.get("date", ""),
             ia.get("responsible_department", ""),
-            "",  # Topic - filled later against controlled vocabulary
+            "",  # Topic - final, human-owned against controlled vocabulary
+            draft_topics.get(reference, ""),
             derive_scope(ia.get("title", "")),
             "YES" if foresight_mention else "no",
             len(mention_list),
             "",  # Kind of foresight (final) - human
-            "",  # AI draft: kind
-            "",  # AI draft: methods
-            "",  # AI draft: material influence
-            "",  # AI draft: how
-            "",  # Other / notes
+            draft.get("kind", ""),
+            "; ".join(draft.get("methods", [])),
+            draft.get("material_influence", ""),
+            draft.get("influence_how", ""),
+            draft.get("notes", ""),
+            "",  # Other / notes - human-owned
         ]
         row += [related_counts.get(t, 0) for t in related_terms]
         row += [
@@ -200,21 +217,23 @@ def build_workbook(manifest: dict, mentions: dict) -> Workbook:
                     mention.get("page_label", ""),
                     mention.get("excerpt", ""),
                     "yes" if mention.get("in_reference_section") else "no",
-                    "",  # AI draft verdict
-                    "",  # AI draft justification
+                    draft_verdicts.get(mention.get("id"), {}).get("verdict", ""),
+                    _draft_justification(draft_verdicts.get(mention.get("id"), {})),
                     "",  # Human verdict
                     "",  # Human notes
                 ]
             )
 
     # --- IAs sheet formatting ---
+    from openpyxl.utils import get_column_letter as _cl
+
+    def col(header_name: str) -> str:
+        return _cl(ia_header.index(header_name) + 1)
+
     ia_last_row = ws_ia.max_row
-    kind_col = "I"  # Kind of foresight (final)
-    ai_kind_col = "J"  # AI draft: kind
-    influence_col = "L"  # AI draft: material influence
-    _add_list_validation(ws_ia, kind_col, config.KIND_VALUES, ia_last_row)
-    _add_list_validation(ws_ia, ai_kind_col, config.KIND_VALUES, ia_last_row)
-    _add_list_validation(ws_ia, influence_col, config.INFLUENCE_VALUES, ia_last_row)
+    _add_list_validation(ws_ia, col("Kind of foresight (final)"), config.KIND_VALUES, ia_last_row)
+    _add_list_validation(ws_ia, col("AI draft: kind"), config.KIND_VALUES, ia_last_row)
+    _add_list_validation(ws_ia, col("AI draft: material influence"), config.INFLUENCE_VALUES, ia_last_row)
 
     _set_col_widths(
         ws_ia,
@@ -224,24 +243,25 @@ def build_workbook(manifest: dict, mentions: dict) -> Workbook:
             "C": 12,
             "D": 14,
             "E": 16,
-            "F": 18,
-            "G": 14,
-            "H": 12,
-            "I": 20,
-            "J": 16,
-            "K": 30,
-            "L": 20,
-            "M": 30,
+            "F": 16,
+            "G": 18,
+            "H": 14,
+            "I": 12,
+            "J": 20,
+            "K": 16,
+            "L": 30,
+            "M": 20,
             "N": 30,
+            "O": 30,
         },
     )
     # related-term columns + tail columns get a plain default-ish width
     from openpyxl.utils import get_column_letter
 
     n_related = len(related_terms)
-    tail_start = 15 + n_related  # 1-based index of first tail column
+    tail_start = 17 + n_related  # 1-based index of first tail column
     for i in range(n_related):
-        _set_col_widths(ws_ia, {get_column_letter(15 + i): 16})
+        _set_col_widths(ws_ia, {get_column_letter(17 + i): 16})
     tail_widths = [10, 22, 22, 22, 20]
     for i, w in enumerate(tail_widths):
         _set_col_widths(ws_ia, {get_column_letter(tail_start + i): w})
@@ -283,6 +303,7 @@ def main() -> int:
     parser.add_argument(
         "--out", type=Path, default=config.OUT_DIR / "dataset.xlsx"
     )
+    parser.add_argument("--drafts", type=Path, default=config.DATA_DIR / "ai_drafts.json")
     args = parser.parse_args()
 
     if not args.manifest.exists():
@@ -294,8 +315,11 @@ def main() -> int:
 
     manifest = load_json(args.manifest)
     mentions = load_json(args.mentions)
+    drafts = load_json(args.drafts) if args.drafts.exists() else None
+    if drafts:
+        print(f"including AI drafts from {args.drafts}")
 
-    wb = build_workbook(manifest, mentions)
+    wb = build_workbook(manifest, mentions, drafts)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     wb.save(args.out)
