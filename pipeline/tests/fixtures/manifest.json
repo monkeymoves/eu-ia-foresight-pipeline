@@ -1,0 +1,57 @@
+{
+  "search": {
+    "date_from": "2022-01-31",
+    "last_run": "2026-07-31T09:00:00Z"
+  },
+  "ias": {
+    "SWD(2026)616": {
+      "ref_safe": "SWD_2026_616",
+      "title": "COMMISSION STAFF WORKING DOCUMENT Impact assessment accompanying the proposal for a REGULATION OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL amending Regulation (EU) 2018/1999 as regards streamlining energy and climate planning",
+      "date": "2026-07-17",
+      "responsible_department": "CLIMA",
+      "detail_url": "https://ec.europa.eu/transparency/documents-register/detail?ref=SWD(2026)616",
+      "first_seen": "2026-07-20T10:15:00Z",
+      "flags": [],
+      "parts": [
+        {
+          "part": 1,
+          "ers_id": "090166e530b8b278",
+          "attachment_id": 3161071,
+          "pdf": "pdfs/SWD_2026_616/part1.pdf",
+          "sha256": "fixture0000000000000000000000000000000000000000000000000000000",
+          "downloaded_at": "2026-07-20T10:16:00Z",
+          "pages": 143
+        },
+        {
+          "part": 2,
+          "ers_id": "090166e530b8b279",
+          "attachment_id": 3161072,
+          "pdf": "pdfs/SWD_2026_616/part2.pdf",
+          "sha256": "fixture0000000000000000000000000000000000000000000000000000001",
+          "downloaded_at": "2026-07-20T10:18:30Z",
+          "pages": 58
+        }
+      ]
+    },
+    "SWD(2025)100": {
+      "ref_safe": "SWD_2025_100",
+      "title": "COUNCIL DIRECTIVE amending Directive 2011/16/EU on administrative cooperation in the field of taxation",
+      "date": "2025-03-04",
+      "responsible_department": "TAXUD",
+      "detail_url": "https://ec.europa.eu/transparency/documents-register/detail?ref=SWD(2025)100",
+      "first_seen": "2025-03-05T08:00:00Z",
+      "flags": ["no_english_version"],
+      "parts": [
+        {
+          "part": 1,
+          "ers_id": "090166e530b8b111",
+          "attachment_id": 3160001,
+          "pdf": "pdfs/SWD_2025_100/part1.pdf",
+          "sha256": "fixture0000000000000000000000000000000000000000000000000000002",
+          "downloaded_at": "2025-03-05T08:01:00Z",
+          "pages": 76
+        }
+      ]
+    }
+  }
+}

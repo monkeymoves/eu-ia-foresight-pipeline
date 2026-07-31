@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-07-31T09:05:00Z",
+  "primary_term": "foresight",
+  "related_terms": [
+    "horizon scanning",
+    "megatrend",
+    "scenario planning",
+    "delphi",
+    "backcasting",
+    "futures literacy"
+  ],
+  "ias": {
+    "SWD(2026)616": {
+      "foresight_mention": true,
+      "mentions": [
+        {
+          "id": "SWD(2026)616#p2-14-1",
+          "part": 2,
+          "page": 14,
+          "page_label": "12",
+          "excerpt": "The Commission's Strategic Foresight report was used to identify long-term energy demand trends feeding into this assessment. Foresight methods, including scenario development, informed the choice of the 2040 planning horizon and the sensitivity analysis presented in Annex 3. Stakeholders consulted during the impact assessment process referenced these foresight-based projections repeatedly when discussing the preferred policy option and its expected effects on Member States' energy planning obligations under the amended Regulation.",
+          "match_text": "Foresight",
+          "in_reference_section": false
+        },
+        {
+          "id": "SWD(2026)616#p55-3-1",
+          "part": 1,
+          "page": 55,
+          "page_label": "53",
+          "excerpt": "See European Commission, Foresight on Demography and Migration, Publications Office, 2023, cited for background on demographic pressures affecting energy demand modelling but not otherwise used in the quantitative analysis underlying this impact assessment.",
+          "match_text": "Foresight",
+          "in_reference_section": true
+        }
+      ],
+      "related_term_counts": {
+        "horizon scanning": 2,
+        "megatrend": 1,
+        "scenario planning": 3,
+        "delphi": 0,
+        "backcasting": 0,
+        "futures literacy": 0
+      },
+      "related_term_locations": [
+        {"term": "horizon scanning", "part": 1, "page": 44},
+        {"term": "horizon scanning", "part": 2, "page": 12},
+        {"term": "scenario planning", "part": 2, "page": 14}
+      ]
+    },
+    "SWD(2025)100": {
+      "foresight_mention": false,
+      "mentions": [],
+      "related_term_counts": {
+        "horizon scanning": 0,
+        "megatrend": 0,
+        "scenario planning": 0,
+        "delphi": 0,
+        "backcasting": 0,
+        "futures literacy": 0
+      },
+      "related_term_locations": []
+    }
+  }
+}

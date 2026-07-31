@@ -47,12 +47,14 @@ already done, only append new register entries.
 
 ## EU register API (verified 2026-07-31)
 
-Search (paged, 20 per page; iterate until totalResults exhausted):
+Search (paged, 20 per page, pages are 1-based; iterate until totalResults
+exhausted). `categories` and `departments` must be present as empty arrays
+or the endpoint returns 503:
 
 ```
 POST https://ec.europa.eu/transparency/documents-register/api/groupSearch?size=20&page=N
 Content-Type: application/json
-{"types":["IMPACT_ASSESS"],"language":"en",
+{"types":["IMPACT_ASSESS"],"categories":[],"departments":[],"language":"en",
  "keywordsSearchType":"AT_LEAST_ONE","target":"TITLE_AND_CONTENT",
  "sortBy":"DOCUMENT_DATE_DESC","isRegular":true,"keywords":"",
  "reference":"","page":N,"dateFrom":"2022-01-31T00:00:00.000Z"}
@@ -60,9 +62,11 @@ Content-Type: application/json
 
 Response: `totalResults`, `documents[]` each with `reference` (e.g.
 `SWD(2026)616`), `date`, `responsibleDepartment` (e.g. `CLIMA`), `url`
-(detail page), `attachments[]`. Each attachment has `part` (1..N) and
-`linguisticVersions` keyed by language; use `en` and take its `ersId`,
-`id`, and `title`. If an attachment has no `en` version, record the IA in
+(detail page), `attachments[]`. `documents[].title` is always null; the
+title lives in `attachments[].linguisticVersions.en.title`, so take the IA
+title from the main/part-1 English version. Each attachment has `part`
+(1..N) and `linguisticVersions` keyed by language; use `en` and take its
+`ersId`, `id`, and `title`. If an attachment has no `en` version, record the IA in
 manifest `flags` as `no_english_version` with available languages, and skip
 that part's download (do not fail the run). Some attachments repeat the
 same `number` across parts; the (reference, part) pair is the identity.
