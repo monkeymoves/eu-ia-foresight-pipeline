@@ -20,7 +20,10 @@ fully evidenced. An optional AI-assist step using a documented prompt
 ([prompts/classification-prompt.md](prompts/classification-prompt.md)) can
 pre-fill clearly-marked draft columns; see
 [docs/adr/0001](docs/adr/0001-human-owned-classification.md) for why drafts
-are never the final answer.
+are never the final answer. The delivered drafts were produced by Claude
+Fable 5 on 31 July 2026 (recorded as `AI_DRAFT_PROVENANCE` in
+`pipeline/config.py` and under `provenance` in the bundle's
+`ai_drafts.json`).
 
 ## Usage
 

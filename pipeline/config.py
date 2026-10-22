@@ -50,6 +50,19 @@ SCOPE_VALUES = [
 KIND_VALUES = ["embedded", "contextual"]
 INFLUENCE_VALUES = ["yes", "no", "unclear"]
 
+# Provenance of the delivered AI draft layer (docs/adr/0001). Written into
+# ai_drafts.json and the bundle README so a methods section can state which
+# model produced the drafts, when, and from which prompt version. Update
+# this block whenever the drafts are regenerated.
+AI_DRAFT_PROVENANCE = {
+    "model": "Claude Fable 5",
+    "model_id": "claude-fable-5",
+    "produced_on": "2026-07-31",
+    "run_via": "Claude Code sessions under a Claude subscription (no API calls)",
+    "prompt": "prompts/classification-prompt.md",
+    "prompt_commit": "c1fc224",
+}
+
 
 def ref_safe(reference: str) -> str:
     """SWD(2026)616 -> SWD_2026_616. One-way; the manifest keeps the mapping."""

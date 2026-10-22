@@ -36,6 +36,7 @@ def build_readme(manifest: dict, mentions: dict) -> str:
     base_url = config.PUBLIC_BASE_URL
     kind_values = ", ".join(config.KIND_VALUES)
     influence_values = ", ".join(config.INFLUENCE_VALUES)
+    prov = config.AI_DRAFT_PROVENANCE
     return f"""# Foresight in EU Impact Assessments - data bundle
 
 {n_ias} impact assessments, {n_mentions} located "foresight" mentions.
@@ -99,11 +100,16 @@ out/
 
 ## Re-running the AI draft step yourself
 
-The AI drafts were produced in Claude sessions (claude.ai / Claude Code)
-using the versioned prompt at `prompts/classification-prompt.md` in the
-repository - no paid API calls anywhere. To redo or extend them, paste the
-prompt plus the relevant excerpts into your own Claude session and copy
-the output back into the "AI draft" columns, then review as usual.
+The AI drafts in this bundle were produced by {prov["model"]} (model id
+`{prov["model_id"]}`) on {prov["produced_on"]}, run in {prov["run_via"]}.
+They used the versioned prompt at `{prov["prompt"]}` in the repository,
+as of commit {prov["prompt_commit"]}. The same details are recorded under
+`provenance` in `ai_drafts.json`; cite them if the drafts are described in
+a methods section. To redo or extend the drafts, paste the prompt plus the
+relevant excerpts into your own Claude session and copy the output back
+into the "AI draft" columns, then review as usual. Expect some variation
+between runs and models: that is one more reason the human-owned columns,
+not the drafts, are the dataset.
 """
 
 

@@ -104,6 +104,7 @@ def main() -> int:
             "prompts/classification-prompt.md; human review required "
             "(docs/adr/0001)"
         ),
+        "provenance": config.AI_DRAFT_PROVENANCE,
         "taxonomy": taxonomy,
         "topics": topic_map,
         "ias": combined_ias,
